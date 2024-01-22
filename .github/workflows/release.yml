@@ -84,5 +84,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./target/lambda/query-metrics/bootstrap.zip
-          asset_name: oxbow-lambda-bootstrap-${{ github.ref_name }}.zip
+          asset_name: query-metrics-bootstrap-${{ github.ref_name }}.zip
           asset_content_type: application/zip
