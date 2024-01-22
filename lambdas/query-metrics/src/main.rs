@@ -2,7 +2,7 @@
 /// This lambda function will run configured datafusion queries and report results CloudWatch
 /// metrics.
 ///
-use aws_lambda_events::event::eventbridge::EventBridgeEvent;
+use aws_lambda_events::event::cloudwatch_events::CloudWatchEvent;
 use aws_sdk_cloudwatch::types::MetricDatum;
 use deltalake::datafusion::common::*;
 use deltalake::datafusion::execution::context::SessionContext;
@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 mod config;
 
-async fn function_handler(_event: LambdaEvent<EventBridgeEvent>) -> Result<(), Error> {
+async fn function_handler(_event: LambdaEvent<CloudWatchEvent>) -> Result<(), Error> {
     let aws_config = aws_config::load_defaults(aws_config::BehaviorVersion::latest()).await;
     let cloudwatch = aws_sdk_cloudwatch::Client::new(&aws_config);
 
