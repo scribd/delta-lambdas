@@ -27,40 +27,43 @@ async fn function_handler(_event: LambdaEvent<CloudWatchEvent>) -> Result<(), Er
     .expect("The `MANIFEST_B64` environment variable does not contain a valid manifest yml");
     debug!("Configuration loaded: {conf:?}");
 
-    for (name, gauge) in conf.gauges.iter() {
-        debug!("Querying the {name} table");
-        let ctx = SessionContext::new();
-        let table = deltalake::open_table(&gauge.url)
-            .await
-            .expect("Failed to register table");
-        ctx.register_table("source", Arc::new(table))
-            .expect("Failed to register table with datafusion");
+    for (name, gauges) in conf.gauges.iter() {
+        for gauge in gauges.iter() {
+            debug!("Querying the {name} table");
+            let ctx = SessionContext::new();
+            let table = deltalake::open_table(&gauge.url)
+                .await
+                .expect("Failed to register table");
+            ctx.register_table("source", Arc::new(table))
+                .expect("Failed to register table with datafusion");
 
-        debug!("Running query: {}", gauge.query);
+            debug!("Running query: {}", gauge.query);
 
-        let df = ctx
-            .sql(&gauge.query)
-            .await
-            .expect("Failed to execute query");
+            let df = ctx
+                .sql(&gauge.query)
+                .await
+                .expect("Failed to execute query");
 
-        match gauge.measurement_type {
-            config::Measurement::Count => {
-                let count = df.count().await.expect("Failed to collect batches");
-                debug!("Found {count} distinct records");
+            match gauge.measurement_type {
+                config::Measurement::Count => {
+                    let count = df.count().await.expect("Failed to collect batches");
+                    debug!("Found {count} distinct records");
 
-                let datum = MetricDatum::builder()
-                    .metric_name(&gauge.name)
-                    .timestamp(DateTime::from(SystemTime::now()))
-                    .value(count as f64)
-                    .unit(StandardUnit::Count)
-                    .build();
-                let res = cloudwatch
-                    .put_metric_data()
-                    .namespace("DataLake")
-                    .metric_data(datum)
-                    .send()
-                    .await?;
-                debug!("Result of CloudWatch send: {res:?}");
+                    let datum = MetricDatum::builder()
+                        .metric_name(&gauge.name)
+                        .timestamp(DateTime::from(SystemTime::now()))
+                        .value(count as f64)
+                        .unit(StandardUnit::Count)
+                        .build();
+
+                    let res = cloudwatch
+                        .put_metric_data()
+                        .namespace(format!("DataLake/{name}"))
+                        .metric_data(datum)
+                        .send()
+                        .await?;
+                    debug!("Result of CloudWatch send: {res:?}");
+                }
             }
         }
     }

@@ -3,15 +3,14 @@
 gauges:
   # Each gauge should have a distinct name for managing inside of the lambda
   important_metric:
-    # Then define a metric name to export to cloudwatch
-    metric: 'last_10_uniq'
-    url: 's3://example-bucket/databases/ds-partitioned-delta-table/'
-    # Currently only a query handler type of `count` is supported
-    type: count
-    # The example Datafusion SQL query below queries the source table, which is defined by
-    # the URL above, to find all the distinct uuids in the last 10 minutes of the current
-    # `ds` partition.
-    query: |
-      SELECT DISTINCT uuid AS total FROM source
+    - metric: 'last_10_uniq' # Then define a metric name to export to cloudwatch
+      url: 's3://example-bucket/databases/ds-partitioned-delta-table/'
+      # Currently only a query handler type of `count` is supported
+      type: count
+      # The example Datafusion SQL query below queries the source table, which is defined by
+      # the URL above, to find all the distinct uuids in the last 10 minutes of the current
+      # `ds` partition.
+      query: |
+        SELECT DISTINCT uuid AS total FROM source
         WHERE ds = ARROW_CAST(CURRENT_DATE() , 'Utf8')
         AND created_at >= (ARROW_CAST(ARROW_CAST(NOW(), 'Timestamp(Second, None)'), 'Int64') - (60 * 10))
