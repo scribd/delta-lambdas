@@ -3,13 +3,17 @@
 /// metrics.
 ///
 use aws_lambda_events::event::cloudwatch_events::CloudWatchEvent;
-use aws_sdk_cloudwatch::types::MetricDatum;
+use aws_sdk_cloudwatch::{
+    primitives::DateTime,
+    types::{MetricDatum, StandardUnit},
+};
 use deltalake::datafusion::common::*;
 use deltalake::datafusion::execution::context::SessionContext;
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
 use tracing::log::*;
 
 use std::sync::Arc;
+use std::time::SystemTime;
 
 mod config;
 
@@ -46,10 +50,13 @@ async fn function_handler(_event: LambdaEvent<CloudWatchEvent>) -> Result<(), Er
 
                 let datum = MetricDatum::builder()
                     .metric_name(&gauge.name)
+                    .timestamp(DateTime::from(SystemTime::now()))
                     .value(count as f64)
+                    .unit(StandardUnit::Count)
                     .build();
                 let res = cloudwatch
                     .put_metric_data()
+                    .namespace("DataLake")
                     .metric_data(datum)
                     .send()
                     .await?;

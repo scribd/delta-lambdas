@@ -13,7 +13,8 @@ pub struct Configuration {
 }
 
 impl Configuration {
-    pub fn from_file<S: Into<String> + AsRef<Path>>(location: S) -> Self {
+    #[cfg(test)]
+    fn from_file<S: Into<String> + AsRef<Path>>(location: S) -> Self {
         serde_yaml::from_reader(File::open(location).expect("Failed to open manifest"))
             .expect("Failed to deserialize")
     }
