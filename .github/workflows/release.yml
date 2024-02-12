@@ -83,6 +83,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/lambda/query-metrics/bootstrap.zip
+          asset_path: ./target/lambda/query-metrics-lambda/bootstrap.zip
           asset_name: query-metrics-bootstrap-${{ github.ref_name }}.zip
           asset_content_type: application/zip

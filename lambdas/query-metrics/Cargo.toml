@@ -1,18 +1,15 @@
 [package]
 name = "query-metrics"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
-# Starting in Rust 1.62 you can use `cargo add` to add dependencies 
-# to your project.
-#
-# If you're using an older Rust version,
-# download cargo-edit(https://github.com/killercup/cargo-edit#installation) 
-# to install the `add` subcommand.
-#
-# Running `cargo add DEPENDENCY_NAME` will
-# add the latest version of a dependency to the list,
-# and it will keep the alphabetic ordering for you.
+[[bin]]
+name = "query-metrics"
+path = "src/cli.rs"
+
+[[bin]]
+name = "query-metrics-lambda"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.79"
@@ -21,7 +18,8 @@ aws-sdk-cloudwatch = "1.11.0"
 aws-sdk-config = "1.11.0"
 aws_lambda_events = { version = "0.12.0" }
 base64 = "0.21.7"
-deltalake = { version = "0.16.5", features = ["datafusion", "s3"] }
+deltalake-core = { version = "0.17.0", features = ["datafusion"] }
+deltalake-aws = { version = "0.1.0" }
 
 lambda_runtime = "0.8.3"
 serde = { version = "1.0.195", features = ["derive"] }
