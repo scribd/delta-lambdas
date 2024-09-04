@@ -102,7 +102,7 @@ async fn function_handler(_event: LambdaEvent<CloudWatchEvent>) -> Result<(), Er
 
                         let res = cloudwatch
                             .put_metric_data()
-                            .namespace(format!("DataLake/{name}"))
+                            .namespace(format!("DataLake/{name}/{}", &gauge.name))
                             .metric_data(datum)
                             .send()
                             .await?;
