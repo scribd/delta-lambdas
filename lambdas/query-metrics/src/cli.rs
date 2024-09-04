@@ -47,6 +47,34 @@ async fn main() -> anyhow::Result<()> {
                     let count = df.count().await.expect("Failed to collect batches");
                     println!("Counted {count} rows");
                 }
+                config::Measurement::Numeric => {
+                    println!("Need to run dimensional count");
+                    let batches = df.collect().await.expect("Failed to collect batches");
+                    let _ = print_batches(&batches);
+
+                    println!("I see this many batches: {}", batches.len());
+                    let mut dimensions: HashMap<String, i64> = HashMap::new();
+                    for batch in batches.iter().filter(|b| b.num_rows() > 0) {
+                        let schema = batch.schema();
+                        let fields = schema.fields();
+                        for row in 0..batch.num_rows() {
+                            for (idx, column) in batch.columns().iter().enumerate() {
+                                let field = &fields[idx];
+                                let name = field.name();
+
+                                if !dimensions.contains_key(name) {
+                                    dimensions.insert(name.to_string(), 0);
+                                }
+                                let current = dimensions.get(name).expect("Failed to retrieve");
+                                let arr: &PrimitiveArray<Int64Type> =
+                                    arrow::array::cast::as_primitive_array(&column);
+                                let count = arr.value(row);
+                                dimensions.insert(name.to_string(), count + current);
+                            }
+                        }
+                    }
+                    println!("results: {dimensions:?}");
+                }
                 config::Measurement::DimensionalCount => {
                     println!("Need to run dimensional count");
                     let batches = df.collect().await.expect("Failed to collect batches");

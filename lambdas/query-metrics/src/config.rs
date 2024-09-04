@@ -38,6 +38,7 @@ pub struct Gauge {
 #[serde(rename_all = "lowercase")]
 pub enum Measurement {
     Count,
+    Numeric,
     DimensionalCount,
 }
 

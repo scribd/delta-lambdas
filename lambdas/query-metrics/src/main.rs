@@ -29,7 +29,7 @@ async fn function_handler(_event: LambdaEvent<CloudWatchEvent>) -> Result<(), Er
         std::env::var("MANIFEST_B64").expect("The `MANIFEST_B64` variable was not defined"),
     )
     .expect("The `MANIFEST_B64` environment variable does not contain a valid manifest yml");
-    debug!("Configuration loaded: {conf:?}");
+    info!("Configuration loaded: {conf:?}");
 
     for (name, gauges) in conf.gauges.iter() {
         for gauge in gauges.iter() {
@@ -41,7 +41,7 @@ async fn function_handler(_event: LambdaEvent<CloudWatchEvent>) -> Result<(), Er
             ctx.register_table("source", Arc::new(table))
                 .expect("Failed to register table with datafusion");
 
-            debug!("Running query: {}", gauge.query);
+            info!("Running query: {}", gauge.query);
 
             let df = ctx
                 .sql(&gauge.query)
@@ -67,6 +67,47 @@ async fn function_handler(_event: LambdaEvent<CloudWatchEvent>) -> Result<(), Er
                         .send()
                         .await?;
                     debug!("Result of CloudWatch send: {res:?}");
+                }
+                config::Measurement::Numeric => {
+                    let batches = df.collect().await.expect("Failed to collect batches");
+                    let mut values: HashMap<String, i64> = HashMap::new();
+
+                    for batch in batches.iter().filter(|b| b.num_rows() > 0) {
+                        let schema = batch.schema();
+                        let fields = schema.fields();
+                        for row in 0..batch.num_rows() {
+                            for (idx, column) in batch.columns().iter().enumerate() {
+                                let field = &fields[idx];
+                                let name = field.name();
+
+                                if !values.contains_key(name) {
+                                    values.insert(name.to_string(), 0);
+                                }
+                                let current = values.get(name).expect("Failed to retrieve");
+                                let arr: &PrimitiveArray<Int64Type> =
+                                    arrow::array::cast::as_primitive_array(&column);
+                                let count = arr.value(row);
+                                values.insert(name.to_string(), count + current);
+                            }
+                        }
+                    }
+                    info!("results: {values:?}");
+                    for (key, value) in values.into_iter() {
+                        let datum = MetricDatum::builder()
+                            .metric_name(&key)
+                            .timestamp(DateTime::from(SystemTime::now()))
+                            .unit(StandardUnit::Count)
+                            .value(value as f64)
+                            .build();
+
+                        let res = cloudwatch
+                            .put_metric_data()
+                            .namespace(format!("DataLake/{name}"))
+                            .metric_data(datum)
+                            .send()
+                            .await?;
+                        info!("submitting {key} to cloudwatch: {res:?}");
+                    }
                 }
                 config::Measurement::DimensionalCount => {
                     let batches = df.collect().await.expect("Failed to collect batches");
