@@ -26,7 +26,9 @@ async fn main() -> anyhow::Result<()> {
     for (name, gauges) in conf.gauges.iter() {
         for gauge in gauges.iter() {
             println!("Querying the {name} table");
-            let ctx = SessionContext::new();
+            let mut ctx = SessionContext::new();
+            datafusion_functions_json::register_all(&mut ctx)?;
+
             let table = deltalake_core::open_table(&gauge.url)
                 .await
                 .expect("Failed to register table");
@@ -48,7 +50,7 @@ async fn main() -> anyhow::Result<()> {
                     println!("Counted {count} rows");
                 }
                 config::Measurement::Numeric => {
-                    println!("Need to run dimensional count");
+                    println!("Need to run numeric count");
                     let batches = df.collect().await.expect("Failed to collect batches");
                     let _ = print_batches(&batches);
 
