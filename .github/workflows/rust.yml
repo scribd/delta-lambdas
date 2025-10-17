@@ -18,14 +18,9 @@ jobs:
               uses: dtolnay/rust-toolchain@stable
             - name: Install Zig toolchain
               uses: mlugg/setup-zig@v2
-            - name: Install Cargo Lambda
-              uses: jaxxstorm/action-install-gh-release@v1.12.0
-              with:
-                repo: cargo-lambda/cargo-lambda
-                platform: linux # Other valid options: 'windows' or 'darwin'
-                arch: x86_64 # Other valid options for linux: 'aarch64'
-            # Add your build steps below
-            - name: Build
-              run: cargo lambda build
             - name: Run tests
               run: cargo test --verbose
+            - name: Build
+              run: |
+                pip install cargo-lambda
+                cargo lambda build
