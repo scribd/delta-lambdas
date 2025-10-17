@@ -4,17 +4,17 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use deltalake_core::arrow::util::pretty::print_batches;
-use deltalake_core::arrow::{array::PrimitiveArray, datatypes::Int64Type};
-use deltalake_core::datafusion::common::*;
-use deltalake_core::datafusion::execution::context::SessionContext;
+use deltalake::arrow::util::pretty::print_batches;
+use deltalake::arrow::{array::PrimitiveArray, datatypes::Int64Type};
+use deltalake::datafusion::common::*;
+use deltalake::datafusion::execution::context::SessionContext;
 use tracing::log::*;
 
 mod config;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    deltalake_aws::register_handlers(None);
+    deltalake::aws::register_handlers(None);
 
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
@@ -27,7 +27,7 @@ async fn main() -> anyhow::Result<()> {
         for gauge in gauges.iter() {
             println!("Querying the {name} table");
             let ctx = SessionContext::new();
-            let table = deltalake_core::open_table(&gauge.url)
+            let table = deltalake::open_table(gauge.url.clone())
                 .await
                 .expect("Failed to register table");
             println!("table opened");
