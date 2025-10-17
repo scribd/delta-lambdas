@@ -7,10 +7,10 @@ use aws_sdk_cloudwatch::{
     primitives::DateTime,
     types::{Dimension, MetricDatum, StandardUnit},
 };
-use deltalake_core::arrow::{array::PrimitiveArray, datatypes::Int64Type};
-use deltalake_core::datafusion::common::*;
-use deltalake_core::datafusion::execution::context::SessionContext;
-use lambda_runtime::{run, service_fn, Error, LambdaEvent};
+use deltalake::arrow::{array::PrimitiveArray, datatypes::Int64Type};
+use deltalake::datafusion::common::*;
+use deltalake::datafusion::execution::context::SessionContext;
+use lambda_runtime::{Error, LambdaEvent, run, service_fn};
 use tracing::log::*;
 
 use std::collections::HashMap;
@@ -20,7 +20,7 @@ use std::time::SystemTime;
 mod config;
 
 async fn function_handler(_event: LambdaEvent<CloudWatchEvent>) -> Result<(), Error> {
-    deltalake_aws::register_handlers(None);
+    deltalake::aws::register_handlers(None);
 
     let aws_config = aws_config::load_defaults(aws_config::BehaviorVersion::latest()).await;
     let cloudwatch = aws_sdk_cloudwatch::Client::new(&aws_config);
@@ -35,7 +35,7 @@ async fn function_handler(_event: LambdaEvent<CloudWatchEvent>) -> Result<(), Er
         for gauge in gauges.iter() {
             debug!("Querying the {name} table");
             let ctx = SessionContext::new();
-            let table = deltalake_core::open_table(&gauge.url)
+            let table = deltalake::open_table(gauge.url.clone())
                 .await
                 .expect("Failed to register table");
             ctx.register_table("source", Arc::new(table))
