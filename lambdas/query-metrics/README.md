@@ -38,7 +38,7 @@ This will produce a result set of:
 +-------+-----------+
 ```
 
-Which wiull produce metric values of:
+Which will produce metric values of:
 
 * `total` 4096
 * `valid_ids` 1000
